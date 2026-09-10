@@ -14,6 +14,9 @@ import * as Content from "../content/orders.js";
 import * as Economy from "../economy.js";
 import * as Format from "../util/format.js";
 
+/** Quoted on every card, so refusing an order is never a surprise. */
+const SKIP_COST = Economy.GEM_COSTS.skip;
+
 export class OrderDock extends Emitter {
 	constructor(root, game) {
 		super();
@@ -53,7 +56,9 @@ export class OrderDock extends Emitter {
 		card.className = "order";
 		card.dataset.id = String(order.id);
 		card.innerHTML = `
-			<button type="button" class="skip" aria-label="Send this order away">×</button>
+			<button type="button" class="skip"
+				aria-label="Send this order away for ${Format.plural(SKIP_COST, "gem")}"
+				>×${glyph("gem")}${SKIP_COST}</button>
 			<header>
 				<span class="face">${portrait(order.customer)}</span>
 				<span class="who">
@@ -94,5 +99,6 @@ export class OrderDock extends Emitter {
 		const ready = this._game.canDeliver(order);
 		card.classList.toggle("ready", ready);
 		card.querySelector(".deliver").disabled = !ready;
+		card.querySelector(".skip").disabled = this._game.gems < SKIP_COST;
 	}
 }

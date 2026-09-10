@@ -382,12 +382,13 @@ export class GameState extends Emitter {
 	 * the thing the board is arranged around.
 	 */
 	skipOrder(id, now = Date.now()) {
-		if (this._gems < 1) {
+		const cost = Economy.GEM_COSTS.skip;
+		if (this._gems < cost) {
 			this.emit("message", "Skipping an order costs a gem.", "block");
 			return false;
 		}
 		if (!this._orders.skip(id)) return false;
-		this._gems -= 1;
+		this._gems -= cost;
 		this._orders.refill(this._orderSlots, this._level, Progression.chainsUnlockedAt(this._level));
 		this._persist();
 		this.emit("walletChanged");

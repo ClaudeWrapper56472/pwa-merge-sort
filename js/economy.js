@@ -28,6 +28,7 @@ export const START = {
 export const GEM_COSTS = {
 	refill: 10,
 	recharge: 3,
+	skip: 1,
 };
 
 /**

@@ -126,7 +126,11 @@ game.on("boardChanged", () => {
 	dock.refresh();
 });
 game.on("ordersChanged", () => dock.refresh());
-game.on("walletChanged", () => refreshOpenPanel());
+game.on("walletChanged", () => {
+	// The cards quote what skipping one costs, so they grey out with the purse.
+	dock.refresh();
+	refreshOpenPanel();
+});
 game.on("projectsChanged", () => refreshOpenPanel());
 game.on("energyChanged", () => {
 	if (sheet.showing() === "energy") showPanel("energy");

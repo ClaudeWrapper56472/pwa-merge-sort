@@ -716,15 +716,22 @@ button:not(.cell) svg,
 	top: -0.4rem;
 	right: -0.4rem;
 	z-index: 2;
-	width: 1.5rem;
+	display: flex;
+	align-items: center;
 	height: 1.5rem;
-	padding: 0;
+	padding: 0 0.3rem;
 	border-radius: 999px;
 	border-color: var(--edge-strong);
 	background: var(--sand);
 	color: var(--ink-soft);
-	font-size: 0.9rem;
+	font-size: 0.75rem;
+	font-weight: 700;
 	line-height: 1;
+}
+
+/* The cross is the button; the price is a note on it. */
+.order .skip svg {
+	margin-left: 0.15em;
 }
 
 /* --- Tabs ------------------------------------------------------------------ */

@@ -25,6 +25,7 @@ export class SaveManager extends Emitter {
 		this._settings = settings;
 		this._document = Migration.emptyDocument();
 		this._loaded = false;
+		this._wiped = false;
 	}
 
 	/**
@@ -46,7 +47,7 @@ export class SaveManager extends Emitter {
 
 	/** Collects live state from whoever is listening, then writes. */
 	flush() {
-		if (!this._loaded) return;
+		if (!this._loaded || this._wiped) return;
 		this.emit("saveRequested");
 		this._settings?.save();
 		this._write();
@@ -86,9 +87,19 @@ export class SaveManager extends Emitter {
 		this.emit("loaded");
 	}
 
-	/** Throws the depot away. Only the settings sheet calls this. */
+	/**
+	 * Throws the depot away, and stops writing for the rest of the page's life.
+	 *
+	 * Both halves matter. A wipe is followed by a reload, and a reload fires
+	 * pagehide, which is one of the hooks above: the flush it triggers would ask
+	 * the running game for its state and hand the depot that was just thrown away
+	 * straight back to storage, so the reload would find it there again.
+	 *
+	 * Only the settings sheet calls this.
+	 */
 	wipe() {
 		this._document = Migration.emptyDocument();
+		this._wiped = true;
 		try {
 			localStorage.removeItem(SaveManager.STORAGE_KEY);
 		} catch {

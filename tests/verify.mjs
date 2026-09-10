@@ -19,6 +19,7 @@ import * as Shop from "../js/content/shop.js";
 import * as Economy from "../js/economy.js";
 import * as Producers from "../js/producers.js";
 import * as Migration from "../js/save-migration.js";
+import { SaveManager } from "../js/save-manager.js";
 import { Board, CELLS, COLUMNS } from "../js/board.js";
 import { OrderBook } from "../js/orders.js";
 import { GameState } from "../js/game-state.js";
@@ -577,6 +578,35 @@ group("Save migration");
 	eq("purchases survive", Migration.migrate({ bought: { crates: 3 } }).bought.crates, 3);
 }
 
+group("Starting a new depot");
+{
+	// The real SaveManager, not the stand-in: the bug this guards against lives
+	// in the handshake between a wipe and the flush the reload after it fires.
+	// Storage is absent under Node, which the manager survives by saying so on
+	// every write. What is under test is what it collects, not where it puts it,
+	// so the complaint is kept out of the run's output.
+	const warn = console.warn;
+	console.warn = () => {};
+	const save = new SaveManager(null);
+	save.load();
+	let asked = 0;
+	save.on("saveRequested", () => {
+		asked += 1;
+		save.submit({ coins: 999_999 });
+	});
+
+	save.flush();
+	eq("a flush asks whoever owns the live game for it", asked, 1);
+	eq("and keeps what it was given", save.document().coins, 999_999);
+
+	save.wipe();
+	eq("a wipe leaves a fresh depot behind", save.document().coins, Economy.START.coins);
+	save.flush();
+	eq("and the flush on the way out of a reload collects nothing", asked, 1);
+	eq("so the depot that was thrown away does not come back", save.document().coins, Economy.START.coins);
+	console.warn = warn;
+}
+
 // --- The running game --------------------------------------------------------
 
 group("A session");
@@ -783,9 +813,10 @@ group("Spending");
 
 	game._gems = 0;
 	eq("skipping an order needs a gem", game.skipOrder(game.orders[0].id, now), false);
-	game._gems = 1;
+	game._gems = Economy.GEM_COSTS.skip;
 	const skipped = game.orders[0].id;
 	check("with one, the order goes", game.skipOrder(skipped, now));
+	eq("and the gem went with it", game.gems, 0);
 	eq("and is replaced", game.orders.length, game.orderSlots);
 	check("by a different one", game.orders.every((order) => order.id !== skipped));
 }
