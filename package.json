@@ -1,0 +1,11 @@
+{
+	"name": "merge-sort",
+	"private": true,
+	"type": "module",
+	"description": "A merge game set in a harbour lost-property depot, as an installable progressive web app.",
+	"scripts": {
+		"test": "node tests/verify.mjs",
+		"icons": "node tools/make-icons.mjs",
+		"serve": "python3 -m http.server 8000"
+	}
+}

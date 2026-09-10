@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- viewport-fit=cover so the sand background reaches under the notch; the
+     safe-area insets in the stylesheet keep the bar and the dock clear of it.
+     Zooming is off: this is a board you drag across, not a page you read. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#1b3b4b">
+<meta name="description" content="Merge salvage, coffee and fish in a harbour depot, and fill the orders that put the town back together.">
+<meta name="mobile-web-app-capable" content="yes">
+<!-- iOS reads only the prefixed one; Chrome warns without the standard one. -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Merge Sort">
+<title>Merge Sort</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon-180.png">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<main id="app">
+
+	<!-- Covers the gap between the page painting and the module reading the save,
+	     so the board never appears empty and then fills in. -->
+	<div id="boot-panel" class="overlay solid">
+		<p id="boot-message">Opening the depot…</p>
+		<p id="boot-detail" class="boot-detail" hidden></p>
+	</div>
+
+	<!--
+	  Classic and inline, so it runs even when the module below never does. A
+	  module that fails to parse, fails to import or throws on the way up takes
+	  the boot panel with it, and a screen reading "Opening the depot…" for ever
+	  says nothing about why. Anything thrown before the app clears the panel is
+	  written into it instead.
+
+	  ES5 throughout: whatever syntax the module choked on, this has to survive it.
+	-->
+	<script>
+	(function () {
+		function report(text) {
+			var message = document.getElementById("boot-message");
+			var detail = document.getElementById("boot-detail");
+			// Gone means the app started and cleared the panel; a later error is the
+			// running game's business, not the boot screen's.
+			if (!message || !detail) return;
+			message.textContent = "Could not start";
+			detail.textContent = text;
+			detail.hidden = false;
+		}
+		window.addEventListener("error", function (event) {
+			var target = event.target;
+			if (target && target !== window && (target.src || target.href)) {
+				report("Could not load " + (target.src || target.href));
+				return;
+			}
+			var where = event.filename
+				? " (" + String(event.filename).split("/").pop() + ":" + event.lineno + ")"
+				: "";
+			report((event.message || "Script error") + where);
+		// Capturing, because a stylesheet or module that 404s fires an error that
+		// never reaches window on its own.
+		}, true);
+		window.addEventListener("unhandledrejection", function (event) {
+			var reason = event.reason;
+			report("Unhandled: " + ((reason && (reason.message || reason)) || "rejection"));
+		});
+	})();
+	</script>
+
+	<header id="hud" class="hud">
+		<button id="level-chip" type="button" class="chip level" aria-label="Level and catalogue">
+			<span class="level-number">1</span>
+			<span class="xp">
+				<span class="xp-track"><span class="xp-fill"></span></span>
+				<span class="xp-text"></span>
+			</span>
+		</button>
+		<button id="coin-chip" type="button" class="chip" aria-label="Coins, and what they buy">
+			<span class="glyph"></span><b>0</b>
+		</button>
+		<span id="gem-chip" class="chip"><span class="glyph"></span><b>0</b></span>
+		<button id="energy-chip" type="button" class="chip energy">
+			<span class="glyph"></span><b>0</b><small>/100</small><em></em>
+		</button>
+	</header>
+
+	<!-- The grid keeps its own aspect ratio and fits inside whatever height is
+	     left after the bar and the dock have taken theirs. No role="grid": that
+	     wants row and gridcell descendants, and these are direct children. -->
+	<div class="board-area">
+		<div id="board" class="board" aria-label="The depot floor"></div>
+	</div>
+
+	<div class="bottom">
+
+		<!-- Floats above the dock rather than sitting in the layout, so the board
+		     does not resize under a finger every time something is tapped. -->
+		<div id="item-bar" class="item-bar" hidden>
+			<span class="item-art"></span>
+			<span class="item-text">
+				<b class="item-name"></b>
+				<span class="item-detail"></span>
+			</span>
+			<span class="item-actions">
+				<button type="button" class="item-recharge" hidden></button>
+				<button type="button" class="item-sell"></button>
+				<button type="button" class="item-close" aria-label="Close">×</button>
+			</span>
+		</div>
+
+		<div id="toasts" class="toasts" role="status" aria-live="polite"></div>
+
+		<div id="dock" class="dock" aria-label="Orders"></div>
+
+		<nav id="tabs" class="tabs" aria-label="Panels">
+			<button type="button" data-panel="harbour">Coins</button>
+			<button type="button" data-panel="catalogue">Catalogue</button>
+			<button type="button" data-panel="help">How to play</button>
+		</nav>
+
+	</div>
+
+	<div id="scrim" class="scrim" hidden></div>
+
+	<section id="sheet" class="sheet" hidden aria-label="Panel">
+		<header class="sheet-head">
+			<h2 class="sheet-title"></h2>
+			<button type="button" class="ghost-button sheet-close">Close</button>
+		</header>
+		<div class="sheet-body"></div>
+	</section>
+
+	<div id="card" class="overlay" hidden>
+		<div class="card-panel">
+			<h2 class="card-title"></h2>
+			<p class="card-lead"></p>
+			<ul class="card-list"></ul>
+			<button type="button" class="primary card-close">Carry on</button>
+		</div>
+	</div>
+
+</main>
+
+<script type="module" src="js/ui/main.js"></script>
+</body>
+</html>

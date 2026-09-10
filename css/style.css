@@ -1,0 +1,1039 @@
+/*
+ * Widget chrome, layout, and every cell rule.
+ *
+ * A harbour at the end of a long summer: warm sand, sun-bleached rope, deep
+ * water in the bar along the top. The items bring their own colour -- brass,
+ * rust, coffee, fish -- so everything around them is kept quiet enough that a
+ * board of thirty things still reads.
+ *
+ * The app is one screen and nothing scrolls except the order strip and whatever
+ * is inside a panel. Anything that will not fit gives up space instead.
+ */
+
+:root {
+	--sand: #f3ece0;
+	--sand-deep: #e4d7c1;
+	--cream: #fffaf1;
+
+	--navy: #1b3b4b; /* the bar, and the sheet's head */
+	--navy-soft: #2c5468;
+	--sea: #2f7f96;
+	--sea-deep: #1d5c70;
+
+	--ink: #3d3228;
+	--ink-soft: #7b6a58;
+	--ink-faint: #b6a894;
+
+	--coral: #ef8f5a;
+	--coral-deep: #d4703c;
+	--gold: #e5a72c;
+	--go: #2f9e63;
+	--go-deep: #23794b;
+	--stop: #c2504b;
+
+	--edge: #dfd0b6;
+	--edge-strong: #cbb896;
+	--disabled: #eee6d8;
+
+	--radius-cell: 22%;
+	--radius-control: 12px;
+	--radius-card: 18px;
+
+	color-scheme: light;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+html,
+body {
+	/* The dynamic viewport, with the percentage left in for browsers that do not
+	   know dvh: a toolbar that collapses must not leave the dock under the fold. */
+	height: 100%;
+	height: 100dvh;
+	margin: 0;
+	overflow: hidden;
+}
+
+body {
+	background: var(--sand);
+	color: var(--ink);
+	font-family: ui-rounded, "SF Pro Rounded", "Segoe UI Variable Display", system-ui,
+		-apple-system, "Helvetica Neue", sans-serif;
+	font-size: clamp(0.9rem, 3.3vw, 1.05rem);
+	line-height: 1.35;
+	/* No rubber-banding and no double-tap zoom: this is a board you drag across. */
+	overscroll-behavior: none;
+	touch-action: manipulation;
+	-webkit-text-size-adjust: 100%;
+	/* A drag that ends on a label would otherwise select the label. */
+	-webkit-user-select: none;
+	user-select: none;
+	-webkit-touch-callout: none;
+}
+
+#app {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	max-width: 30rem; /* a phone's design width; wider only makes the reach longer */
+	height: 100%;
+	margin-inline: auto;
+	padding: max(0.5rem, env(safe-area-inset-top)) 0.6rem max(0.5rem, env(safe-area-inset-bottom));
+	background: var(--sand);
+	overflow: hidden;
+}
+
+svg {
+	display: block;
+	width: 100%;
+	height: 100%;
+}
+
+/* --- Controls -------------------------------------------------------------- */
+
+button {
+	border: 2px solid var(--edge);
+	border-radius: var(--radius-control);
+	padding: 0.4rem 0.7rem;
+	background: var(--cream);
+	color: var(--ink);
+	font: inherit;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background-color 90ms ease-out, border-color 90ms ease-out, transform 90ms ease-out;
+}
+
+button:active:not(:disabled) {
+	transform: scale(0.97);
+}
+
+button:focus-visible {
+	outline: none;
+	border-color: var(--sea-deep);
+	box-shadow: 0 0 0 3px rgb(47 127 150 / 30%);
+}
+
+button:disabled {
+	background: var(--disabled);
+	border-color: var(--edge);
+	color: var(--ink-faint);
+	cursor: default;
+}
+
+button.primary {
+	background: var(--coral);
+	border-color: var(--coral-deep);
+	color: #fff;
+}
+
+button.primary:disabled {
+	background: var(--disabled);
+	border-color: var(--edge);
+	color: var(--ink-faint);
+}
+
+button.danger {
+	background: var(--cream);
+	border-color: var(--stop);
+	color: var(--stop);
+}
+
+button.ghost-button {
+	background: transparent;
+	border-color: transparent;
+	color: var(--cream);
+}
+
+/* Inline glyphs: coins in a button, a fish in an order line. A board cell is a
+   button too, and its sprite is the tile rather than a mark inside a label, so
+   it is the one kind of button this must keep its hands off. */
+button:not(.cell) svg,
+.pay svg,
+.reward svg,
+.card-list svg,
+.panel-lead svg {
+	display: inline-block;
+	width: 1.15em;
+	height: 1.15em;
+	vertical-align: -0.22em;
+	margin-right: 0.15em;
+}
+
+/* --- The bar --------------------------------------------------------------- */
+
+.hud {
+	display: flex;
+	align-items: center;
+	gap: 0.3rem;
+	flex: none;
+	overflow: hidden;
+	padding: 0.3rem 0.4rem;
+	border-radius: var(--radius-card);
+	background: var(--navy);
+	color: var(--cream);
+	box-shadow: inset 0 -2px 0 rgb(0 0 0 / 18%);
+}
+
+.chip {
+	display: flex;
+	align-items: center;
+	gap: 0.15rem;
+	min-height: 2.1rem;
+	padding: 0.15rem 0.4rem;
+	font-size: 0.85rem;
+	border: none;
+	border-radius: 999px;
+	background: rgb(255 255 255 / 10%);
+	color: var(--cream);
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
+.chip .glyph {
+	width: 1.05rem;
+	height: 1.05rem;
+	flex: none;
+}
+
+.chip small {
+	opacity: 0.6;
+	font-weight: 600;
+}
+
+.chip.level {
+	flex: 1 1 0;
+	gap: 0.35rem;
+	min-width: 4rem;
+	padding-left: 0.2rem;
+}
+
+.level-number {
+	display: grid;
+	place-items: center;
+	width: 1.8rem;
+	height: 1.8rem;
+	flex: none;
+	border-radius: 999px;
+	background: var(--coral);
+	color: #fff;
+	font-size: 0.95rem;
+}
+
+.xp {
+	display: flex;
+	flex-direction: column;
+	gap: 0.15rem;
+	min-width: 0;
+	flex: 1 1 auto;
+	align-items: stretch;
+}
+
+.xp-track {
+	height: 0.4rem;
+	border-radius: 999px;
+	background: rgb(0 0 0 / 30%);
+	overflow: hidden;
+}
+
+.xp-fill {
+	display: block;
+	height: 100%;
+	width: 0;
+	border-radius: 999px;
+	background: var(--coral);
+	transition: width 220ms ease-out;
+}
+
+.xp-text {
+	font-size: 0.62rem;
+	font-weight: 600;
+	opacity: 0.7;
+	letter-spacing: 0.02em;
+}
+
+.chip.energy em {
+	font-size: 0.68rem;
+	font-style: normal;
+	opacity: 0.65;
+	margin-left: 0.15rem;
+}
+
+/* --- The board ------------------------------------------------------------- */
+
+/*
+ * The board is the one thing on screen with a shape of its own, so it is fitted
+ * into whatever is left rather than given a size. The area is a size container
+ * and the grid takes the smaller of its two dimensions: as wide as the area, or
+ * as wide as the area is tall allows for a seven-by-nine box.
+ */
+.board-area {
+	display: flex;
+	flex: 1 1 auto;
+	min-height: 0;
+	margin: 0.45rem 0;
+	container-type: size;
+}
+
+.board {
+	display: grid;
+	grid-template-columns: repeat(var(--columns, 7), 1fr);
+	grid-template-rows: repeat(var(--rows, 9), 1fr);
+	gap: 0.3rem;
+	width: min(100%, calc(100cqh * var(--columns, 7) / var(--rows, 9)));
+	aspect-ratio: var(--columns, 7) / var(--rows, 9);
+	margin: auto;
+	padding: 0.35rem;
+	border-radius: var(--radius-card);
+	background:
+		repeating-linear-gradient(90deg, rgb(0 0 0 / 3%) 0 1px, transparent 1px 14px),
+		var(--sand-deep);
+	box-shadow: inset 0 2px 6px rgb(61 50 40 / 12%);
+}
+
+.cell {
+	position: relative;
+	/* A grid rather than the anonymous box a button gives its contents, which
+	   would centre the sprite at its natural size instead of filling the tile. */
+	display: grid;
+	padding: 0;
+	min-width: 0;
+	border: none;
+	border-radius: var(--radius-cell);
+	background: rgb(255 255 255 / 28%);
+	box-shadow: inset 0 0 0 1px rgb(255 255 255 / 25%);
+	transition: background-color 120ms ease-out, box-shadow 120ms ease-out, transform 120ms ease-out;
+}
+
+.cell.filled {
+	background: var(--cream);
+	box-shadow: 0 1px 0 rgb(61 50 40 / 12%), inset 0 0 0 1px rgb(0 0 0 / 4%);
+}
+
+.cell .art {
+	display: block;
+	width: 100%;
+	height: 100%;
+	padding: 2%;
+}
+
+.cell.spent .art {
+	opacity: 0.45;
+	filter: saturate(0.5);
+}
+
+.cell.producer.filled {
+	background: linear-gradient(180deg, #fffdf7, #f6ead6);
+	box-shadow: 0 1px 0 rgb(61 50 40 / 14%), inset 0 0 0 2px rgb(229 167 44 / 45%);
+}
+
+.cell.maxed.filled {
+	box-shadow: 0 1px 0 rgb(61 50 40 / 14%), inset 0 0 0 2px rgb(47 127 150 / 40%);
+}
+
+.cell.selected {
+	box-shadow: 0 0 0 3px var(--sea), inset 0 0 0 1px rgb(0 0 0 / 4%);
+}
+
+/* Everything the selected item would merge with, so the pair is findable in a
+   board of thirty. */
+.cell.match::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	border-radius: inherit;
+	box-shadow: inset 0 0 0 3px var(--gold);
+	animation: breathe 1.4s ease-in-out infinite;
+}
+
+.cell.over {
+	box-shadow: 0 0 0 3px var(--ink-faint);
+}
+
+.cell.over-merge {
+	box-shadow: 0 0 0 4px var(--go);
+	transform: scale(1.06);
+}
+
+.cell.lifted .art {
+	opacity: 0.25;
+}
+
+.badge {
+	position: absolute;
+	right: -2px;
+	bottom: -2px;
+	min-width: 1.15rem;
+	padding: 0 0.2rem;
+	border-radius: 999px;
+	background: var(--gold);
+	color: #fff;
+	font-size: 0.65rem;
+	font-weight: 800;
+	line-height: 1.15rem;
+	text-align: center;
+	box-shadow: 0 1px 2px rgb(61 50 40 / 30%);
+}
+
+/* A clock rather than a count, so it needs the room and not the weight. */
+.badge.empty {
+	background: var(--ink-faint);
+	font-size: 0.58rem;
+	font-weight: 700;
+	letter-spacing: -0.02em;
+}
+
+.badge.energy {
+	background: var(--sea);
+}
+
+/* The item under the finger, out of the grid and slightly larger. */
+.ghost {
+	position: fixed;
+	top: 0;
+	left: 0;
+	z-index: 60;
+	padding: 4%;
+	border-radius: var(--radius-cell);
+	background: var(--cream);
+	box-shadow: 0 8px 18px rgb(61 50 40 / 35%);
+	pointer-events: none;
+	transform-origin: center;
+	scale: 1.15;
+}
+
+@keyframes pop {
+	0% { transform: scale(0.6); }
+	60% { transform: scale(1.14); }
+	100% { transform: scale(1); }
+}
+
+@keyframes breathe {
+	0%, 100% { opacity: 0.45; }
+	50% { opacity: 1; }
+}
+
+.cell.pop .art {
+	animation: pop 260ms cubic-bezier(0.2, 1.3, 0.4, 1);
+}
+
+/* --- Below the board ------------------------------------------------------- */
+
+.bottom {
+	position: relative;
+	flex: none;
+}
+
+.item-bar {
+	position: absolute;
+	bottom: calc(100% + 0.35rem);
+	left: 0;
+	right: 0;
+	z-index: 20;
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.4rem 0.5rem;
+	border: 2px solid var(--edge);
+	border-radius: var(--radius-card);
+	background: var(--cream);
+	box-shadow: 0 6px 16px rgb(61 50 40 / 18%);
+}
+
+.item-bar[hidden] {
+	display: none;
+}
+
+.item-art {
+	width: 2.6rem;
+	height: 2.6rem;
+	flex: none;
+}
+
+.item-text {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	flex: 1 1 auto;
+}
+
+.item-name {
+	font-size: 0.95rem;
+	line-height: 1.2;
+}
+
+.item-detail {
+	color: var(--ink-soft);
+	font-size: 0.7rem;
+	line-height: 1.25;
+}
+
+.item-actions {
+	display: flex;
+	align-items: center;
+	gap: 0.3rem;
+	flex: none;
+}
+
+.item-actions button {
+	padding: 0.35rem 0.5rem;
+	font-size: 0.8rem;
+}
+
+.item-sell.confirming {
+	background: var(--stop);
+	border-color: var(--stop);
+	color: #fff;
+}
+
+.item-close {
+	width: 2rem;
+	padding: 0.35rem 0;
+	border-color: transparent;
+	background: transparent;
+	color: var(--ink-soft);
+	font-size: 1.1rem;
+	line-height: 1;
+}
+
+.toasts {
+	position: absolute;
+	bottom: calc(100% + 0.35rem);
+	left: 0;
+	right: 0;
+	z-index: 30;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.25rem;
+	pointer-events: none;
+}
+
+.toast {
+	margin: 0;
+	padding: 0.3rem 0.7rem;
+	border-radius: 999px;
+	background: var(--navy);
+	color: var(--cream);
+	font-size: 0.8rem;
+	font-weight: 600;
+	box-shadow: 0 4px 10px rgb(27 59 75 / 30%);
+	animation: rise 200ms ease-out;
+}
+
+.toast.good { background: var(--go-deep); }
+.toast.block { background: var(--stop); }
+.toast.wait { background: var(--navy-soft); }
+
+.toast.leaving {
+	opacity: 0;
+	transition: opacity 280ms ease-out;
+}
+
+@keyframes rise {
+	from { opacity: 0; transform: translateY(6px); }
+	to { opacity: 1; transform: none; }
+}
+
+/* --- Orders ---------------------------------------------------------------- */
+
+.dock {
+	display: flex;
+	gap: 0.4rem;
+	padding: 0.15rem 0.1rem 0.35rem;
+	overflow-x: auto;
+	overflow-y: hidden;
+	scroll-snap-type: x mandatory;
+	scrollbar-width: none;
+}
+
+.dock::-webkit-scrollbar {
+	display: none;
+}
+
+.order {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	gap: 0.15rem;
+	flex: 0 0 11.5rem;
+	scroll-snap-align: start;
+	padding: 0.45rem 0.5rem 0.5rem;
+	border: 2px solid var(--edge);
+	border-radius: var(--radius-card);
+	background: var(--cream);
+	box-shadow: 0 2px 0 rgb(61 50 40 / 8%);
+}
+
+.order.ready {
+	border-color: var(--go);
+	box-shadow: 0 0 0 2px rgb(47 158 99 / 25%);
+}
+
+.order header {
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+	min-width: 0;
+}
+
+/* A face rather than a name alone: at a glance down the strip, who is asking is
+   the thing that tells one card from another. */
+.order .face {
+	width: 2.2rem;
+	height: 2.2rem;
+	flex: none;
+	border-radius: 999px;
+	overflow: hidden;
+	background: var(--sand);
+}
+
+.order .who {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	line-height: 1.15;
+}
+
+.order .who b {
+	font-size: 0.9rem;
+}
+
+.order .who > span {
+	color: var(--ink-soft);
+	font-size: 0.66rem;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.order .note {
+	margin: 0;
+	color: var(--ink-soft);
+	font-size: 0.7rem;
+	font-style: italic;
+	line-height: 1.25;
+	/* Two lines and no more: the cards have to stay the same height. */
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	min-height: 1.75rem;
+}
+
+.wants {
+	display: flex;
+	gap: 0.3rem;
+	margin: 0.15rem 0;
+	padding: 0;
+	list-style: none;
+}
+
+.want {
+	position: relative;
+	width: 2.5rem;
+	height: 2.5rem;
+	padding: 0.15rem;
+	border-radius: 10px;
+	background: var(--sand);
+}
+
+.want.done {
+	background: rgb(47 158 99 / 18%);
+	box-shadow: inset 0 0 0 2px var(--go);
+}
+
+.want .art {
+	display: block;
+	width: 100%;
+	height: 100%;
+}
+
+.tally {
+	position: absolute;
+	right: -3px;
+	bottom: -4px;
+	padding: 0 0.2rem;
+	border-radius: 999px;
+	background: var(--navy);
+	color: var(--cream);
+	font-size: 0.6rem;
+	font-weight: 800;
+	font-variant-numeric: tabular-nums;
+}
+
+.want.done .tally {
+	background: var(--go-deep);
+}
+
+.order .pay {
+	display: flex;
+	gap: 0.5rem;
+	margin: 0;
+	color: var(--ink-soft);
+	font-size: 0.72rem;
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+}
+
+.order .deliver {
+	margin-top: 0.15rem;
+	padding: 0.35rem;
+	background: var(--sand);
+	font-size: 0.85rem;
+}
+
+.order.ready .deliver {
+	background: var(--go);
+	border-color: var(--go-deep);
+	color: #fff;
+}
+
+.order .skip {
+	position: absolute;
+	top: -0.4rem;
+	right: -0.4rem;
+	z-index: 2;
+	width: 1.5rem;
+	height: 1.5rem;
+	padding: 0;
+	border-radius: 999px;
+	border-color: var(--edge-strong);
+	background: var(--sand);
+	color: var(--ink-soft);
+	font-size: 0.9rem;
+	line-height: 1;
+}
+
+/* --- Tabs ------------------------------------------------------------------ */
+
+.tabs {
+	display: flex;
+	gap: 0.4rem;
+}
+
+.tabs button {
+	flex: 1 1 0;
+	min-height: 2.6rem;
+	padding: 0.3rem;
+	font-size: 0.85rem;
+}
+
+/* --- The sheet ------------------------------------------------------------- */
+
+.scrim {
+	position: fixed;
+	inset: 0;
+	z-index: 40;
+	background: rgb(27 59 75 / 45%);
+}
+
+.sheet {
+	position: fixed;
+	z-index: 50;
+	left: 50%;
+	bottom: 0;
+	width: min(30rem, 100%);
+	max-height: 82dvh;
+	transform: translateX(-50%);
+	display: flex;
+	flex-direction: column;
+	border-radius: var(--radius-card) var(--radius-card) 0 0;
+	background: var(--sand);
+	box-shadow: 0 -8px 24px rgb(27 59 75 / 30%);
+	animation: slide-up 220ms ease-out;
+}
+
+@keyframes slide-up {
+	from { transform: translate(-50%, 18%); opacity: 0; }
+	to { transform: translate(-50%, 0); opacity: 1; }
+}
+
+.sheet[hidden] {
+	display: none;
+}
+
+.sheet-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+	padding: 0.6rem 0.75rem;
+	border-radius: var(--radius-card) var(--radius-card) 0 0;
+	background: var(--navy);
+	color: var(--cream);
+}
+
+.sheet-head h2 {
+	margin: 0;
+	font-size: 1.05rem;
+}
+
+.sheet-body {
+	padding: 0.75rem 0.75rem max(1rem, env(safe-area-inset-bottom));
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	-webkit-overflow-scrolling: touch;
+}
+
+.panel-lead {
+	margin: 0 0 0.75rem;
+	color: var(--ink-soft);
+	font-size: 0.85rem;
+}
+
+.panel-note {
+	margin: 0.75rem 0;
+	color: var(--ink-soft);
+	font-size: 0.78rem;
+}
+
+.project {
+	display: grid;
+	grid-template-columns: 1fr auto;
+	align-items: center;
+	gap: 0.2rem 0.6rem;
+	margin-bottom: 0.5rem;
+	padding: 0.55rem 0.65rem;
+	border: 2px solid var(--edge);
+	border-radius: var(--radius-card);
+	background: var(--cream);
+}
+
+.project h3 {
+	margin: 0;
+	font-size: 0.95rem;
+}
+
+.project .blurb {
+	grid-column: 1;
+	margin: 0;
+	color: var(--ink-soft);
+	font-size: 0.75rem;
+}
+
+.project .reward {
+	grid-column: 1 / -1;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.15rem 0.6rem;
+	margin: 0.25rem 0 0;
+	font-size: 0.75rem;
+	font-weight: 700;
+	color: var(--ink-soft);
+}
+
+.project button {
+	grid-row: 1 / 3;
+	grid-column: 2;
+	min-width: 5.5rem;
+	font-variant-numeric: tabular-nums;
+}
+
+.project.done {
+	background: rgb(47 158 99 / 12%);
+	border-color: rgb(47 158 99 / 40%);
+}
+
+.project.locked {
+	opacity: 0.65;
+}
+
+.panel-head {
+	margin: 1.1rem 0 0.5rem;
+	font-size: 0.95rem;
+}
+
+.panel-head:first-of-type {
+	margin-top: 0.25rem;
+}
+
+.chain h3 {
+	margin: 0.75rem 0 0.35rem;
+	font-size: 0.9rem;
+	color: var(--ink-soft);
+	text-transform: lowercase;
+	letter-spacing: 0.04em;
+}
+
+.chain-strip {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.35rem;
+}
+
+.find {
+	width: 4.1rem;
+	padding: 0.25rem;
+	border-radius: var(--radius-control);
+	background: var(--cream);
+	box-shadow: inset 0 0 0 1px var(--edge);
+	text-align: center;
+}
+
+.find .art {
+	display: block;
+	width: 2.6rem;
+	height: 2.6rem;
+	margin: 0 auto;
+}
+
+.find-name {
+	display: block;
+	font-size: 0.6rem;
+	line-height: 1.15;
+	color: var(--ink-soft);
+}
+
+/* Not yet held: the shape, and nothing else. */
+.find.unknown {
+	background: var(--sand-deep);
+	box-shadow: none;
+}
+
+.find.unknown .art {
+	filter: brightness(0) opacity(0.22);
+}
+
+.help dl {
+	margin: 0;
+}
+
+.help dt {
+	margin-top: 0.6rem;
+	font-weight: 800;
+}
+
+.help dd {
+	margin: 0.1rem 0 0;
+	color: var(--ink-soft);
+	font-size: 0.85rem;
+}
+
+.toggle {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	margin: 0.75rem 0;
+	font-size: 0.85rem;
+}
+
+.toggle input {
+	width: 1.2rem;
+	height: 1.2rem;
+	accent-color: var(--sea);
+}
+
+.help .danger,
+.energy-panel .primary {
+	width: 100%;
+	min-height: 3rem;
+	margin-top: 0.5rem;
+}
+
+/* --- Cards ----------------------------------------------------------------- */
+
+.overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 70;
+	display: grid;
+	place-items: center;
+	padding: 1.25rem;
+	background: rgb(27 59 75 / 55%);
+}
+
+.overlay.solid {
+	background: var(--sand);
+	color: var(--ink-soft);
+}
+
+.overlay[hidden] {
+	display: none;
+}
+
+.boot-detail {
+	max-width: 22rem;
+	color: var(--stop);
+	font-size: 0.8rem;
+	text-align: center;
+}
+
+.card-panel {
+	width: min(20rem, 100%);
+	padding: 1.1rem 1.1rem 0.9rem;
+	border-radius: var(--radius-card);
+	background: var(--cream);
+	box-shadow: 0 12px 32px rgb(27 59 75 / 40%);
+	text-align: center;
+	animation: pop-card 260ms cubic-bezier(0.2, 1.2, 0.4, 1);
+}
+
+@keyframes pop-card {
+	from { transform: scale(0.9); opacity: 0; }
+	to { transform: none; opacity: 1; }
+}
+
+.card-title {
+	margin: 0 0 0.25rem;
+	font-size: 1.5rem;
+}
+
+.card-lead {
+	margin: 0 0 0.75rem;
+	color: var(--ink-soft);
+	font-size: 0.9rem;
+}
+
+.card-list {
+	display: flex;
+	flex-direction: column;
+	gap: 0.3rem;
+	margin: 0 0 0.9rem;
+	padding: 0;
+	list-style: none;
+}
+
+.card-list li {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.35rem;
+	padding: 0.35rem;
+	border-radius: var(--radius-control);
+	background: var(--sand);
+	font-weight: 700;
+	font-size: 0.9rem;
+}
+
+.card-list svg {
+	width: 1.5rem;
+	height: 1.5rem;
+	margin: 0;
+	vertical-align: middle;
+}
+
+.card-close {
+	width: 100%;
+	min-height: 3rem;
+}
+
+/* --- Motion ---------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::after {
+		animation: none !important;
+		transition: none !important;
+	}
+}
+
+/* Short screens: the board keeps its shape, so the trimming happens around it. */
+@media (max-height: 700px) {
+	.order .note { display: none; }
+	.order { flex-basis: 10.5rem; }
+	.tabs button { min-height: 2.3rem; font-size: 0.8rem; }
+}
