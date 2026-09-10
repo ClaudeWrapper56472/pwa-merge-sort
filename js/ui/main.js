@@ -10,6 +10,7 @@ import { Overlays } from "./overlays.js";
 import { Toasts } from "./toast.js";
 import * as Panels from "./panels.js";
 import { lockPageZoom } from "./page-zoom.js";
+import { flyRewards } from "./rewards.js";
 
 /**
  * Boot and wiring.
@@ -111,7 +112,12 @@ itemBar.on("rechargeRequested", (index) => {
 
 itemBar.on("closed", () => board.select(-1));
 
-dock.on("deliverRequested", (id) => game.deliver(id));
+dock.on("deliverRequested", (id) => {
+	// Where the card is has to be read while it is still there.
+	const from = dock.rectOf(id);
+	const reward = game.deliver(id);
+	if (reward !== false) flyRewards(from, reward);
+});
 dock.on("skipRequested", (id) => game.skipOrder(id));
 
 hud.on("energyPressed", () => showPanel("energy"));

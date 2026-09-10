@@ -44,6 +44,15 @@ export class OrderDock extends Emitter {
 		for (const order of orders) this._paintTallies(order);
 	}
 
+	/**
+	 * Where a card is on screen, for something that has to fly out of it. Read
+	 * before the order is delivered: the card is gone the moment it is.
+	 */
+	rectOf(id) {
+		const card = this._root.querySelector(`.order[data-id="${id}"]`);
+		return card === null ? null : card.getBoundingClientRect();
+	}
+
 	_rebuild(orders) {
 		this._root.replaceChildren(...orders.map((order) => this._card(order)));
 		for (const order of orders) this._paintTallies(order);

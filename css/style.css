@@ -173,7 +173,8 @@ button:not(.cell) svg,
 .pay svg,
 .reward svg,
 .card-list svg,
-.panel-lead svg {
+.panel-lead svg,
+.fly svg {
 	display: inline-block;
 	width: 1.15em;
 	height: 1.15em;
@@ -1051,6 +1052,53 @@ button:not(.cell) svg,
 .card-close {
 	width: 100%;
 	min-height: 3rem;
+}
+
+/* --- Rewards on the wing --------------------------------------------------- */
+
+/*
+ * A token leaving an order card for the chip that counts what is on it. It is
+ * centred on where it starts and carries how far it has to go in --fly-x and
+ * --fly-y, both set when the flight begins. Under the level-up card, which is
+ * the thing to read when it is up.
+ */
+.fly {
+	position: fixed;
+	z-index: 65;
+	display: flex;
+	align-items: center;
+	padding: 0.15rem 0.45rem;
+	border-radius: 999px;
+	background: var(--navy);
+	color: var(--cream);
+	font-size: 0.8rem;
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+	box-shadow: 0 4px 10px rgb(61 50 40 / 30%);
+	pointer-events: none;
+	translate: -50% -50%;
+	animation-name: fly;
+	animation-timing-function: cubic-bezier(0.4, 0, 0.55, 1);
+	animation-fill-mode: both;
+}
+
+/* One list of the same functions throughout, so every step interpolates. */
+@keyframes fly {
+	0% { opacity: 0; transform: translate(0, 0) scale(0.7); }
+	14% { opacity: 1; transform: translate(0, -0.7rem) scale(1.08); }
+	82% { opacity: 1; }
+	100% { opacity: 0; transform: translate(var(--fly-x), var(--fly-y)) scale(0.65); }
+}
+
+/* The chip taking what just landed on it. */
+.chip.taken {
+	animation: taken 320ms cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+@keyframes taken {
+	0% { transform: scale(1); }
+	35% { transform: scale(1.14); }
+	100% { transform: scale(1); }
 }
 
 /* --- Motion ---------------------------------------------------------------- */

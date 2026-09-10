@@ -26,6 +26,8 @@ import { GameState } from "../js/game-state.js";
 import { Emitter } from "../js/util/emitter.js";
 import { Rng } from "../js/util/rng.js";
 import * as Format from "../js/util/format.js";
+import { readFileSync, readdirSync, existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { itemSprite, glyph, portrait } from "../js/ui/sprites.js";
 
 // GameState draws its first seed from the platform, which Node has had as a
@@ -884,6 +886,36 @@ group("Formatting");
 	eq("and as hours when there are hours", Format.clock(4000), "1h 6m");
 	eq("one of a thing is singular", Format.plural(1, "crate"), "1 crate");
 	eq("more than one is not", Format.plural(3, "crate"), "3 crates");
+}
+
+// --- Offline -----------------------------------------------------------------
+
+group("The precache list");
+{
+	// A module missing from the service worker's list is invisible until someone
+	// opens the game with no network, and then it does not open at all.
+	const here = fileURLToPath(new URL("../", import.meta.url));
+	const source = readFileSync(`${here}sw.js`, "utf8");
+	const opens = source.indexOf("const ASSETS = [");
+	const block = source.slice(opens, source.indexOf("];", opens));
+	const listed = new Set([...block.matchAll(/"([^"]+)"/g)].map((found) => found[1]));
+
+	check("the list was found at all", listed.size > 10);
+	for (const path of listed) {
+		if (path === "./") continue;
+		check(`${path} is a file that exists`, existsSync(`${here}${path}`));
+	}
+
+	const walk = (directory) => readdirSync(`${here}${directory}`, { withFileTypes: true })
+		.flatMap((entry) => (entry.isDirectory()
+			? walk(`${directory}${entry.name}/`)
+			: [`${directory}${entry.name}`]));
+	for (const path of walk("js/")) {
+		check(`${path} is precached`, listed.has(path));
+	}
+	for (const path of ["index.html", "css/style.css", "manifest.webmanifest"]) {
+		check(`${path} is precached`, listed.has(path));
+	}
 }
 
 // --- Result ------------------------------------------------------------------
