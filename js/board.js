@@ -64,6 +64,23 @@ export class Board {
 		return found;
 	}
 
+	/**
+	 * Whether the board holds every one of a list of `{ chain, tier, count }`.
+	 * What an order asks for, and what a project does.
+	 */
+	holds(wants) {
+		return wants.every((want) => this.countOf(want.chain, want.tier) >= want.count);
+	}
+
+	/** Takes a list of wants off the board. Checked with `holds` first. */
+	take(wants) {
+		for (const want of wants) {
+			for (const index of this.indexesOf(want.chain, want.tier).slice(0, want.count)) {
+				this.clear(index);
+			}
+		}
+	}
+
 	firstEmpty() {
 		return this._cells.indexOf(null);
 	}

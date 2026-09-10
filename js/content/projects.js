@@ -7,6 +7,11 @@
  *
  * Rewards are deliberately not coins: experience, a bigger bar, another order
  * slot, or a producer dropped straight onto the board.
+ *
+ * A project may also want items, in `wants`, and they come off the board the way
+ * an order's do. Only the museum does: it is the last thing on the list and the
+ * one place the top of a chain is asked for by name, so the trophies have
+ * somewhere to go besides the till.
  */
 export const PROJECTS = [
 	{
@@ -91,9 +96,13 @@ export const PROJECTS = [
 	{
 		id: "museum",
 		name: "Open the Salvage Museum",
-		blurb: "Every strange thing the sea gave back.",
+		blurb: "Every strange thing the sea gave back. Greta has the labels written.",
 		cost: 120000,
 		level: 18,
+		wants: [
+			{ chain: "salvage", tier: 8, count: 1 },
+			{ chain: "catch", tier: 7, count: 1 },
+		],
 		xp: 8000,
 		gems: 25,
 	},

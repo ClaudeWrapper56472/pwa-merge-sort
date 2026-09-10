@@ -63,14 +63,33 @@ body {
 		-apple-system, "Helvetica Neue", sans-serif;
 	font-size: clamp(0.9rem, 3.3vw, 1.05rem);
 	line-height: 1.35;
-	/* No rubber-banding and no double-tap zoom: this is a board you drag across. */
+	/* No rubber-banding: this is a board you drag across, not a page you pull on. */
 	overscroll-behavior: none;
-	touch-action: manipulation;
 	-webkit-text-size-adjust: 100%;
 	/* A drag that ends on a label would otherwise select the label. */
 	-webkit-user-select: none;
 	user-select: none;
 	-webkit-touch-callout: none;
+}
+
+/*
+ * The browser never zooms the app: panning is the only touch behaviour it is
+ * allowed, so neither a pinch nor a double tap grows the sheet, the dock or the
+ * bar over the board. Every element says so, not just body, because WebKit reads
+ * touch-action from the element under the finger.
+ *
+ * Both axes stay open: the sheet scrolls down a panel, the dock across its
+ * orders.
+ */
+#app,
+#app * {
+	touch-action: pan-x pan-y;
+}
+
+/* A drag on the board carries an item, so the board takes no browser gesture. */
+#app .board,
+#app .board * {
+	touch-action: none;
 }
 
 #app {
@@ -813,6 +832,12 @@ button:not(.cell) svg,
 	margin: 0;
 	color: var(--ink-soft);
 	font-size: 0.75rem;
+}
+
+/* Spans both columns, so the button stays beside the title rather than under it. */
+.project .wants {
+	grid-column: 1 / -1;
+	margin: 0.4rem 0 0.1rem;
 }
 
 .project .reward {

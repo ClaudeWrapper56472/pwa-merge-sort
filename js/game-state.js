@@ -93,12 +93,20 @@ export class GameState extends Emitter {
 
 	/** Every project, with what is standing between the player and it. */
 	projectList() {
-		return Projects.PROJECTS.map((project) => ({
-			...project,
-			done: this._projects.has(project.id),
-			locked: this._level < project.level,
-			affordable: this._coins >= project.cost,
-		}));
+		return Projects.PROJECTS.map((project) => {
+			const wants = project.wants ?? [];
+			return {
+				...project,
+				done: this._projects.has(project.id),
+				locked: this._level < project.level,
+				affordable: this._coins >= project.cost,
+				wants: wants.map((want) => ({
+					...want,
+					have: Math.min(this._board.countOf(want.chain, want.tier), want.count),
+				})),
+				stocked: this._board.holds(wants),
+			};
+		});
 	}
 
 	/** The chandler's shelf: what is for sale, at what it costs today. */
@@ -400,11 +408,18 @@ export class GameState extends Emitter {
 			this.emit("message", "Not enough coins yet.", "block");
 			return false;
 		}
+		const wants = project.wants ?? [];
+		if (!this._board.holds(wants)) {
+			this.emit("message", "It wants more than coins.", "block");
+			return false;
+		}
 
 		this._coins -= project.cost;
+		this._board.take(wants);
 		this._projects.add(id);
 		this._applyReward(project, now);
 		this.emit("walletChanged");
+		this.emit("boardChanged");
 		this.emit("projectsChanged");
 		this.emit("message", `${project.name} — done.`, "good");
 		this._grantXp(project.xp ?? 0, now);

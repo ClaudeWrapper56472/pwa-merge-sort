@@ -9,7 +9,10 @@
  *
  * The price climbs with every one bought, so coins never buy a floor covered in
  * producers, and each new one costs the sort of money the sale of a good tier
- * takes to raise.
+ * takes to raise. That last part sets the rate: a chain tops out at its fifth
+ * tier, which is sixteen tier ones, and the levels and the harbour hand over
+ * only some of them. The rest are bought, so the tenth has to still be priced
+ * like an item rather than like a harbour project.
  */
 export const STOCK = [
 	{
@@ -37,8 +40,16 @@ export const STOCK = [
 
 /** Each one bought makes the next dearer, so this is a sink and never a strategy. */
 export function priceOf(entry, bought) {
-	return Math.round(entry.base * Math.pow(1.7, bought));
+	return Math.round(entry.base * Math.pow(CLIMB, bought));
 }
+
+/**
+ * How much dearer each one makes the next. Enough that a floor of producers is
+ * never the cheap answer, and no more: a tenth sack costs twenty times the
+ * first, not two hundred times it, so the top of a chain is somewhere a player
+ * gets to rather than somewhere the price list quietly closes off.
+ */
+const CLIMB = 1.35;
 
 export function stockFor(chainId) {
 	return STOCK.find((entry) => entry.chain === chainId) ?? null;

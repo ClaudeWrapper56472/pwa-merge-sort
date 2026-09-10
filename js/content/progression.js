@@ -11,6 +11,11 @@
  * Filling the bar and a gem are what every level carries; the table adds to it.
  * A gem a level is the floor under the only currency the game does not sell,
  * and it is what makes an energy refill something a patient player can reach.
+ *
+ * The producers dropped here are aimed at the chains the chandler charges most
+ * for. Salvage already has the opening board and the jetty behind it, so a
+ * fourth free cart would top the chain out on its own and leave the roastery and
+ * the fishing boat to be paid for alone.
  */
 export const LEVEL_REWARDS = {
 	2: { coins: 150, gems: 1, drop: { chain: "galley", tier: 1 }, note: "The galley opens. Coffee gives energy back." },
@@ -25,7 +30,7 @@ export const LEVEL_REWARDS = {
 	11: { coins: 4200, gems: 1, drop: { chain: "nets", tier: 2 } },
 	12: { coins: 5500, gems: 1, energyCap: 10 },
 	13: { coins: 7000, gems: 3 },
-	14: { coins: 9000, gems: 1, drop: { chain: "crates", tier: 3 } },
+	14: { coins: 9000, gems: 1, drop: { chain: "nets", tier: 3 } },
 	15: { coins: 12000, gems: 2, energyCap: 15 },
 };
 

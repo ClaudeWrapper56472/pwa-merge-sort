@@ -60,6 +60,8 @@ export function orderReward(lines, level) {
  * levels take five orders and the late ones take fifty. It grows by a third a
  * level while orders are still climbing tiers. Around level fourteen they stop,
  * because there is no tier left to aim at, and the bar nearly stops with them.
+ * The trophy that turns up after that is occasional rather than a rung, so it
+ * pays for itself in one card instead of raising what a level asks for.
  */
 export function xpForLevel(level) {
 	let xp = 50;

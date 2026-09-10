@@ -52,6 +52,7 @@ const ASSETS = [
 	"js/ui/main.js",
 	"js/ui/order-dock.js",
 	"js/ui/overlays.js",
+	"js/ui/page-zoom.js",
 	"js/ui/panels.js",
 	"js/ui/sheet.js",
 	"js/ui/sprites.js",

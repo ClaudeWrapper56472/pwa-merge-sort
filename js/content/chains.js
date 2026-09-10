@@ -20,6 +20,17 @@
  */
 
 /**
+ * The top tier of an item chain is worth more than its place on the curve, and
+ * on purpose. Every other tier is worth about two and a half times the one
+ * below, which an order for two of that lower tier beats on its own -- so the
+ * last merge of a chain would be the one merge in the game that loses money.
+ * A trophy pays for itself instead.
+ *
+ * The cafe needs none of this. Its top tier is drunk rather than sold, and
+ * ninety energy already beats the two lattes that went into it.
+ */
+
+/**
  * Energy is only ever won back by merging. A tier-1 coffee cherry gives back
  * exactly what the tap that produced it cost, so a player who never merges runs
  * level for a while and then stops -- and two cherries make a bean worth three.
@@ -57,7 +68,7 @@ export const CHAINS = {
 			{ name: "Storm Lantern", value: 110 },
 			{ name: "Ship's Anchor", value: 260 },
 			{ name: "Brass Compass", value: 600 },
-			{ name: "Ship in a Bottle", value: 1400 },
+			{ name: "Ship in a Bottle", value: 2800 },
 		],
 	},
 
@@ -114,7 +125,7 @@ export const CHAINS = {
 			{ name: "Sea Bass", value: 80 },
 			{ name: "Lobster", value: 190 },
 			{ name: "Swordfish", value: 440 },
-			{ name: "Pearl", value: 1000 },
+			{ name: "Pearl", value: 2200 },
 		],
 	},
 };

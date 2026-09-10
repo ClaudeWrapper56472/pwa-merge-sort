@@ -248,6 +248,44 @@ group("The chandler");
 		.some((cell) => cell !== null && cell.chain === "nets" && cell.charges === Producers.capacity(cell)));
 }
 
+group("Topping out a producer");
+{
+	// Every producer chain ends at its fifth tier, which is sixteen tier ones.
+	// Levels and the harbour give some away and the chandler sells the rest, and
+	// the three chains have to come out somewhere near each other: a salvage yard
+	// that arrives free while the fishing boat costs more than the whole harbour
+	// is two different games played on the same board.
+	const units = (item) => Math.pow(2, item.tier - 1);
+	const given = { crates: 0, galley: 0, nets: 0 };
+	const add = (item) => {
+		if (item !== undefined && given[item.chain] !== undefined) given[item.chain] += units(item);
+	};
+	for (const item of Progression.OPENING_BOARD) add(item);
+	for (const reward of Object.values(Progression.LEVEL_REWARDS)) add(reward.drop);
+	for (const project of Projects.PROJECTS) add(project.drop);
+
+	const bill = {};
+	for (const chainId of Object.keys(given)) {
+		const needed = units({ chain: chainId, tier: Chains.maxTier(chainId) });
+		check(`${chainId}: the free ones do not top the chain out on their own`, given[chainId] < needed);
+		const entry = Shop.stockFor(chainId);
+		let coins = 0;
+		for (let bought = 0; bought < needed - given[chainId]; bought += 1) {
+			coins += Shop.priceOf(entry, bought);
+		}
+		bill[chainId] = coins;
+		check(`${chainId}: the last one bought is still priced like an item`,
+			Shop.priceOf(entry, needed - given[chainId] - 1) < Chains.value({ chain: "salvage", tier: 8 }) * 8);
+	}
+
+	const harbour = Projects.PROJECTS.reduce((total, project) => total + project.cost, 0);
+	check("no chain costs more to finish than the whole harbour", Math.max(...Object.values(bill)) < harbour);
+	check("salvage is the cheapest chain to finish, being the one you start with",
+		bill.crates < Math.min(bill.galley, bill.nets));
+	check("but not so much cheaper that it is the only one anybody finishes",
+		Math.max(...Object.values(bill)) < bill.crates * 10);
+}
+
 group("Economy");
 {
 	check("experience to level climbs", Economy.xpForLevel(2) > Economy.xpForLevel(1));
@@ -262,6 +300,23 @@ group("Economy");
 	eq("small orders pay no gems", Economy.orderReward([{ chain: "salvage", tier: 1, count: 1 }], 1).gems, 0);
 	check("large ones do", Economy.orderReward([{ chain: "salvage", tier: 7, count: 2 }], 9).gems > 0);
 	eq("selling pays the item's value", Economy.sellValue({ chain: "catch", tier: 4 }), 80);
+
+	// The last merge of a chain has to pay for itself. Every other tier is worth
+	// about two and a half times the one below, which an order for two of that
+	// lower tier beats on its own -- so without a premium the top of a chain
+	// would be the one merge in the game that loses money.
+	for (const chainId of ["salvage", "catch"]) {
+		const top = Chains.maxTier(chainId);
+		const halves = [{ chain: chainId, tier: top - 1, count: 2 }];
+		const trophy = Chains.value({ chain: chainId, tier: top });
+		check(`${chainId}: the trophy beats selling both halves`,
+			trophy > Chains.value(halves[0]) * 2);
+		check(`${chainId}: and beats an order for them, at any level anyone reaches`,
+			trophy > Economy.orderReward(halves, 50).coins);
+	}
+	// The cafe pays in energy instead, and its top tier beats its halves there.
+	check("a mocha grande beats the two lattes that made it",
+		Chains.energyOf({ chain: "cafe", tier: 6 }) > Chains.energyOf({ chain: "cafe", tier: 5 }) * 2);
 }
 
 // --- The board ---------------------------------------------------------------
@@ -329,6 +384,25 @@ group("Saving the board");
 	eq("a missing board is an empty one", patched.occupied(), 0);
 }
 
+group("Wants against the board");
+{
+	const board = new Board();
+	const bolt = { chain: "salvage", tier: 1 };
+	board.put(0, { ...bolt });
+	board.put(1, { ...bolt });
+	board.put(2, { chain: "catch", tier: 1 });
+
+	check("a board holds what it holds", board.holds([{ ...bolt, count: 2 }]));
+	check("and not more than it holds", !board.holds([{ ...bolt, count: 3 }]));
+	check("one missing line is enough to fail",
+		!board.holds([{ ...bolt, count: 1 }, { chain: "catch", tier: 2, count: 1 }]));
+	check("an empty list is always held", board.holds([]));
+
+	board.take([{ ...bolt, count: 1 }]);
+	eq("taking one takes exactly one", board.countOf("salvage", 1), 1);
+	eq("and leaves everything else", board.occupied(), 2);
+}
+
 group("Charges");
 {
 	const now = 9_000_000;
@@ -383,7 +457,8 @@ group("What the townsfolk ask for");
 				check(`level ${level}: never asks for a locked chain`, chains.includes(line.chain));
 				check("never asks for a producer", Chains.chain(line.chain).kind !== "producer");
 				check("asks for a real tier", Chains.tierOf(line) !== null);
-				check("never asks for the top of a chain", line.tier < Chains.maxTier(line.chain));
+				check("the top of a chain is not asked for before it is a trophy",
+					line.tier < Chains.maxTier(line.chain) || level >= 15);
 				// A tier one is two taps and no merge, which is not an order.
 				check("never asks for what a producer makes directly", line.tier >= 2);
 				check("asks for at least one", line.count >= 1);
@@ -391,6 +466,24 @@ group("What the townsfolk ask for");
 			eq("never asks for the same thing twice",
 				new Set(order.lines.map((line) => line.chain)).size, order.lines.length);
 		}
+	}
+
+	// The trophy: the top of a chain, asked for late and seldom. Seldom is the
+	// point of it -- a card asking for a ship in a bottle is a hundred and
+	// twenty-eight bolts of work, and every second one would be a wall.
+	for (const [level, wanted] of [[14, false], [20, true]]) {
+		const chains = Progression.chainsUnlockedAt(level);
+		const rolls = new Rng(41);
+		let tops = 0;
+		let lines = 0;
+		for (let attempt = 0; attempt < 4000; attempt += 1) {
+			for (const line of Content.rollOrder(rolls, { level, chains }).lines) {
+				lines += 1;
+				if (line.tier === Chains.maxTier(line.chain)) tops += 1;
+			}
+		}
+		eq(`level ${level}: the top of a chain ${wanted ? "is" : "is not"} asked for`, tops > 0, wanted);
+		if (wanted) check("and only now and then", tops / lines < 0.1);
 	}
 
 	const first = Content.rollOrder(new Rng(77), { level: 6, chains: Progression.chainsUnlockedAt(6) });
@@ -666,6 +759,27 @@ group("Spending");
 	game._gems = Economy.GEM_COSTS.recharge;
 	check("gems recharge a producer", game.buyRecharge(sack, now));
 	eq("it is full again", game.board.at(sack).charges, Producers.capacity(game.board.at(sack)));
+
+	// The museum is the one project that wants something off the board as well as
+	// coins, and it is where the top of a chain is asked for by name.
+	const museum = Projects.projectById("museum");
+	check("the museum wants exhibits", museum.wants.length > 0);
+	check("and every one of them is the top of its chain",
+		museum.wants.every((want) => want.tier === Chains.maxTier(want.chain)));
+	game._coins = 200_000;
+	eq("coins alone do not open it", game.buyProject("museum", now), false);
+	eq("and nothing was spent", game.coins, 200_000);
+	check("the panel says what is missing", game.projectList()
+		.find((project) => project.id === "museum").wants.every((want) => want.have < want.count));
+
+	for (const want of museum.wants) game.board.put(game.board.firstEmpty(), { ...want });
+	const stocked = game.projectList().find((project) => project.id === "museum");
+	check("with them on the board it is ready", stocked.stocked);
+	const held = game.board.occupied();
+	check("and it opens", game.buyProject("museum", now));
+	eq("the exhibits went behind glass", game.board.occupied(), held - museum.wants.length);
+	check("nothing it wanted is still on the floor",
+		museum.wants.every((want) => game.board.countOf(want.chain, want.tier) === 0));
 
 	game._gems = 0;
 	eq("skipping an order needs a gem", game.skipOrder(game.orders[0].id, now), false);

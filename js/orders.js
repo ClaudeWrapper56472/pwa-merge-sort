@@ -52,7 +52,7 @@ export class OrderBook {
 	}
 
 	canDeliver(board, order) {
-		return order.lines.every((line) => board.countOf(line.chain, line.tier) >= line.count);
+		return board.holds(order.lines);
 	}
 
 	/**
@@ -62,11 +62,7 @@ export class OrderBook {
 	 */
 	deliver(board, order, level) {
 		if (!this.canDeliver(board, order)) return null;
-		for (const line of order.lines) {
-			for (const index of board.indexesOf(line.chain, line.tier).slice(0, line.count)) {
-				board.clear(index);
-			}
-		}
+		board.take(order.lines);
 		this._remove(order.id);
 		return Economy.orderReward(order.lines, level);
 	}

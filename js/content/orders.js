@@ -144,6 +144,18 @@ function lineCount(rng, level) {
 const LOWEST_TIER = 2;
 
 /**
+ * The level at which the top of a chain starts being asked for, and how rarely.
+ *
+ * It is the largest thing anyone asks for by a long way -- a ship in a bottle is
+ * a hundred and twenty-eight rusty bolts -- so it is a card that turns up now
+ * and then and is worth arranging the board around, never a rung the centre
+ * climbs to. Fifteen is where the centre has finished climbing, so a trophy is
+ * the one thing left that is new.
+ */
+const TROPHY_LEVEL = 15;
+const TROPHY_ONE_IN = 8;
+
+/**
  * The tier an order aims at, one step below what the player can comfortably
  * reach. Orders that ask for the top of a chain would be asking for the whole
  * board, so the centre stops two short of it.
@@ -158,7 +170,13 @@ function rollTier(rng, chainId, level) {
 	const centre = centreTier(chainId, level);
 	const offset = rng.pickWeighted([25, 50, 25]) - 1;
 	const top = Chains.maxTier(chainId);
-	return Math.min(Math.max(LOWEST_TIER, centre + offset), Math.max(LOWEST_TIER, top - 1));
+	const tier = Math.min(Math.max(LOWEST_TIER, centre + offset), Math.max(LOWEST_TIER, top - 1));
+	// Promoted from the tier below, so a trophy is asked for about as often as
+	// the roll already reaches the top of what it is allowed.
+	const trophy = tier === top - 1
+		&& level >= TROPHY_LEVEL
+		&& rng.randiRange(1, TROPHY_ONE_IN) === 1;
+	return trophy ? top : tier;
 }
 
 /** The cheapest tier comes in handfuls; anything the player had to work for comes as one. */

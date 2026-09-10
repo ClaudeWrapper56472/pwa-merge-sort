@@ -9,6 +9,7 @@ import { Sheet } from "./sheet.js";
 import { Overlays } from "./overlays.js";
 import { Toasts } from "./toast.js";
 import * as Panels from "./panels.js";
+import { lockPageZoom } from "./page-zoom.js";
 
 /**
  * Boot and wiring.
@@ -17,6 +18,8 @@ import * as Panels from "./panels.js";
  * another view. The only thing this file decides for itself is which panel a tab
  * opens and when the clock ticks.
  */
+
+lockPageZoom();
 
 const settings = new Settings();
 settings.load();

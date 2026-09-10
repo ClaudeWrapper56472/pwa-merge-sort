@@ -44,6 +44,11 @@ experience and often a gem. Orders are only ever handed over whole. Sending one
 away costs a gem, so the board is arranged around the orders rather than the
 orders rerolled around the board.
 
+What a card asks for climbs a tier every few levels and stops two short of the
+top of a chain. Past level fifteen one card in thirty asks for the top itself — a
+ship in a bottle is a hundred and twenty-eight rusty bolts, so it is a thing to
+build a board around rather than the new normal.
+
 **Room.** Sixty-three cells and no more, which is the real constraint. Tap
 anything to see what it is, what it is worth and what two of it would make, and
 sell what you are not merging.
@@ -53,7 +58,9 @@ sack is another eight taps an hour — and every one bought makes the next deare
 so it is a sink rather than a strategy. The rest goes on the harbour: nine
 projects, from clearing the jetty to opening the museum, each paying back in
 experience, a bigger energy bar, another order slot, or a producer dropped onto
-the board.
+the board. The museum wants two exhibits as well as the money — the top of the
+salvage chain and the top of the catch — which is where a trophy goes when you
+would rather not sell it.
 
 **Levels.** Experience comes from orders and projects. Every level fills the bar
 and pays at least one gem, and the early ones open the chains: coffee at two,

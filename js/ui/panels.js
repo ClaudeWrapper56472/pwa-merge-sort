@@ -33,6 +33,19 @@ function rewardLine(reward) {
 	return parts.map((part) => `<span>${part}</span>`).join("");
 }
 
+/** What a project wants off the board, tallied the way an order's card tallies it. */
+function wantsList(wants) {
+	const list = element("ul", "wants");
+	for (const want of wants) {
+		const item = element("li", `want${want.have >= want.count ? " done" : ""}`);
+		item.innerHTML = `<span class="art">${itemSprite(want)}</span>
+			<span class="tally">${want.have}/${want.count}</span>`;
+		item.title = Chains.name(want);
+		list.append(item);
+	}
+	return list;
+}
+
 export function harbourPanel(game, onBuy, onBuyProducer) {
 	const panel = element("div", "panel harbour");
 	const projects = game.projectList();
@@ -40,7 +53,7 @@ export function harbourPanel(game, onBuy, onBuyProducer) {
 
 	panel.append(element("p", "panel-lead",
 		`Coins do two things and nothing else: they buy producers from the chandler,
-		and they put the harbour back together.<br>
+		and they put the harbour back together. The museum wants an exhibit as well.<br>
 		<b>${done} of ${projects.length}</b> restored.`));
 
 	panel.append(element("h3", "panel-head", "The chandler"));
@@ -76,6 +89,8 @@ export function harbourPanel(game, onBuy, onBuyProducer) {
 			<p class="blurb">${project.blurb}</p>
 			<p class="reward">${rewardLine(project)}</p>`;
 
+		if (project.wants.length > 0 && !project.done) row.append(wantsList(project.wants));
+
 		const button = element("button", "primary");
 		button.type = "button";
 		if (project.done) {
@@ -86,7 +101,7 @@ export function harbourPanel(game, onBuy, onBuyProducer) {
 			button.disabled = true;
 		} else {
 			button.innerHTML = `${glyph("coin")}${Format.count(project.cost)}`;
-			button.disabled = !project.affordable;
+			button.disabled = !project.affordable || !project.stocked;
 			button.addEventListener("click", () => onBuy(project.id));
 		}
 		row.append(button);
@@ -162,7 +177,8 @@ export function helpPanel(game, settings, onReset) {
 			merged coffee gives back far more than the two that made it.</dd>
 			<dt>Orders</dt>
 			<dd>The strip along the bottom. Get everything on a card onto the board and
-			deliver it for coins and experience. Sending one away costs a gem.</dd>
+			deliver it for coins and experience. Sending one away costs a gem. Late on,
+			a card now and then asks for the top of a chain.</dd>
 			<dt>Room</dt>
 			<dd>${CELLS} cells and no more. Tap anything to see what it sells for, and
 			sell what you are not merging.</dd>
@@ -174,7 +190,8 @@ export function helpPanel(game, settings, onReset) {
 			<dd>Two uses, both under Harbour. The chandler sells producers — another
 			sack is another eight taps an hour — and each one bought makes the next
 			dearer. The rest goes on restoring the harbour, which pays back in
-			experience, a bigger energy bar, another order slot, or a producer.</dd>
+			experience, a bigger energy bar, another order slot, or a producer. The
+			museum wants two exhibits as well as the money.</dd>
 		</dl>`;
 
 	const stats = game.stats;
